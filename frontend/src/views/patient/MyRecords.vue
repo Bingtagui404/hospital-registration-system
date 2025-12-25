@@ -52,7 +52,7 @@ function getStatusType(status: string) {
 
 function getStatusText(status: string) {
   switch (status) {
-    case 'BOOKED': return '已预约'
+    case 'BOOKED': return '待就诊'
     case 'CANCELLED': return '已取消'
     case 'FINISHED': return '已完成'
     default: return status

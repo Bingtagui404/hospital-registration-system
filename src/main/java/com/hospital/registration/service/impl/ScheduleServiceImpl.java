@@ -1,6 +1,7 @@
 package com.hospital.registration.service.impl;
 
 import com.hospital.registration.entity.Schedule;
+import com.hospital.registration.mapper.RegistrationMapper;
 import com.hospital.registration.mapper.ScheduleMapper;
 import com.hospital.registration.service.ScheduleService;
 import com.hospital.registration.vo.Result;
@@ -18,6 +19,9 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Autowired
     private ScheduleMapper scheduleMapper;
+
+    @Autowired
+    private RegistrationMapper registrationMapper;
 
     @Override
     public Result<List<Schedule>> list() {
@@ -49,6 +53,35 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional
     public Result<Schedule> add(Schedule schedule) {
+        // 检查是否有已删除的同医生+日期+时段排班，如有则恢复
+        Schedule deleted = scheduleMapper.selectDeletedByDoctorDateSlot(
+                schedule.getDoctorId(), schedule.getWorkDate(), schedule.getTimeSlot());
+        if (deleted != null) {
+            // 校验必填字段
+            if (schedule.getTotalQuota() == null) {
+                return Result.error("总号源不能为空");
+            }
+
+            // 统计已有的非取消挂号数量，防止超卖
+            int occupied = registrationMapper.countOccupiedBySchedule(deleted.getScheduleId());
+
+            // 检查新的总号源是否小于已占用数
+            if (schedule.getTotalQuota() < occupied) {
+                return Result.error("总号源不能小于已占用数量（" + occupied + "）");
+            }
+
+            // 计算正确的剩余号源
+            int remainingQuota = schedule.getTotalQuota() - occupied;
+
+            scheduleMapper.restoreById(deleted.getScheduleId(),
+                    schedule.getTotalQuota(), remainingQuota, schedule.getFee());
+            deleted.setStatus(1);
+            deleted.setTotalQuota(schedule.getTotalQuota());
+            deleted.setRemainingQuota(remainingQuota);
+            deleted.setFee(schedule.getFee());
+            return Result.success("排班已恢复", deleted);
+        }
+
         schedule.setStatus(1);
         if (schedule.getRemainingQuota() == null) {
             schedule.setRemainingQuota(schedule.getTotalQuota());
@@ -68,6 +101,20 @@ public class ScheduleServiceImpl implements ScheduleService {
         if (existing == null) {
             return Result.error("排班不存在");
         }
+
+        // 从挂号表统计真实已占用数量（BOOKED + FINISHED，避免脏数据和遗漏已就诊记录）
+        int occupied = registrationMapper.countOccupiedBySchedule(schedule.getScheduleId());
+
+        // 检查新的总号源是否小于已占用数
+        if (schedule.getTotalQuota() != null && schedule.getTotalQuota() < occupied) {
+            return Result.error("总号源不能小于已占用数量（" + occupied + "）");
+        }
+
+        // 同步调整剩余号源：remaining = newTotal - occupied
+        if (schedule.getTotalQuota() != null) {
+            schedule.setRemainingQuota(schedule.getTotalQuota() - occupied);
+        }
+
         try {
             scheduleMapper.update(schedule);
         } catch (DuplicateKeyException e) {
@@ -85,5 +132,11 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
         scheduleMapper.deleteById(scheduleId);
         return Result.success("删除成功", null);
+    }
+
+    @Override
+    public Result<List<Schedule>> listByDoctorAndDateRange(Integer doctorId, LocalDate startDate, LocalDate endDate) {
+        List<Schedule> list = scheduleMapper.selectByDoctorAndDateRange(doctorId, startDate, endDate);
+        return Result.success(list);
     }
 }

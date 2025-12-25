@@ -34,10 +34,19 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     @Transactional
     public Result<Department> add(Department department) {
-        // 检查科室名称是否已存在
+        // 检查科室名称是否已存在（包括有效科室）
         Department existing = departmentMapper.selectByName(department.getDeptName());
-        if (existing != null) {
+        if (existing != null && existing.getStatus() == 1) {
             return Result.error("科室名称已存在");
+        }
+
+        // 检查是否有已删除的同名科室，如有则恢复
+        Department deleted = departmentMapper.selectDeletedByName(department.getDeptName());
+        if (deleted != null) {
+            departmentMapper.restoreById(deleted.getDeptId(), department.getDescription());
+            deleted.setStatus(1);
+            deleted.setDescription(department.getDescription());
+            return Result.success("科室已恢复", deleted);
         }
 
         department.setStatus(1);
@@ -73,5 +82,14 @@ public class DepartmentServiceImpl implements DepartmentService {
 
         departmentMapper.deleteById(deptId);
         return Result.success("删除成功", null);
+    }
+
+    @Override
+    public Result<List<Department>> search(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return list();
+        }
+        List<Department> list = departmentMapper.searchByName(keyword.trim());
+        return Result.success(list);
     }
 }

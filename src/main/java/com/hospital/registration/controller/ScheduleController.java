@@ -50,4 +50,12 @@ public class ScheduleController {
     public Result<Void> delete(@PathVariable("id") Integer id) {
         return scheduleService.delete(id);
     }
+
+    @GetMapping("/doctor/{doctorId}")
+    public Result<List<Schedule>> listByDoctor(
+            @PathVariable Integer doctorId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        return scheduleService.listByDoctorAndDateRange(doctorId, startDate, endDate);
+    }
 }

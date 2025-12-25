@@ -3,7 +3,7 @@ package com.hospital.registration.entity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-@Data
+@Data //Lombok注解
 public class Admin {
 
     private Integer adminId;

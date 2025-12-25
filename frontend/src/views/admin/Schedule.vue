@@ -24,6 +24,9 @@ const form = ref<Partial<Schedule>>({
   fee: 50
 })
 
+// 编辑时记录已预约数量，用于限制最小总号源
+const bookedCount = ref(0)
+
 async function loadDepartments() {
   const res = await deptApi.list()
   departments.value = res.data
@@ -50,6 +53,7 @@ async function loadSchedules() {
 
 function showAddDialog() {
   dialogTitle.value = '新增排班'
+  bookedCount.value = 0
   form.value = {
     doctorId: undefined,
     workDate: '',
@@ -62,6 +66,8 @@ function showAddDialog() {
 
 function showEditDialog(row: Schedule) {
   dialogTitle.value = '编辑排班'
+  // 计算已预约数量 = 总号源 - 剩余号源
+  bookedCount.value = (row.totalQuota || 0) - (row.remainingQuota || 0)
   form.value = { ...row }
   if (row.deptId) {
     loadDoctors(row.deptId)
@@ -196,7 +202,10 @@ onMounted(async () => {
           </el-radio-group>
         </el-form-item>
         <el-form-item label="总号源">
-          <el-input-number v-model="form.totalQuota" :min="1" :max="100" />
+          <el-input-number v-model="form.totalQuota" :min="bookedCount || 1" :max="100" />
+          <span v-if="bookedCount > 0" style="margin-left: 8px; color: #909399; font-size: 12px">
+            （已预约 {{ bookedCount }} 人）
+          </span>
         </el-form-item>
         <el-form-item label="挂号费">
           <el-input-number v-model="form.fee" :min="0" :precision="2" :step="10" />

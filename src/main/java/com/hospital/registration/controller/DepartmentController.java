@@ -39,4 +39,9 @@ public class DepartmentController {
     public Result<Void> delete(@PathVariable("id") Integer id) {
         return departmentService.delete(id);
     }
+
+    @GetMapping("/search")
+    public Result<List<Department>> search(@RequestParam(required = false) String keyword) {
+        return departmentService.search(keyword);
+    }
 }

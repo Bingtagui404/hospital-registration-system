@@ -44,4 +44,9 @@ public class DoctorController {
     public Result<Void> delete(@PathVariable("id") Integer id) {
         return doctorService.delete(id);
     }
+
+    @GetMapping("/search")
+    public Result<List<Doctor>> search(@RequestParam(required = false) String keyword) {
+        return doctorService.search(keyword);
+    }
 }

@@ -23,12 +23,20 @@ public class RegistrationController {
     public Result<Registration> create(@RequestBody Map<String, Integer> params) {
         Integer patientId = params.get("patientId");
         Integer scheduleId = params.get("scheduleId");
+        if (patientId == null || scheduleId == null) {
+            return Result.error("参数不完整：patientId 和 scheduleId 不能为空");
+        }
         return registrationService.create(patientId, scheduleId);
     }
 
     @PutMapping("/cancel/{id}")
     public Result<Void> cancel(@PathVariable("id") Integer id) {
         return registrationService.cancel(id);
+    }
+
+    @PutMapping("/finish/{id}")
+    public Result<Void> finish(@PathVariable("id") Integer id) {
+        return registrationService.finish(id);
     }
 
     @GetMapping("/my")

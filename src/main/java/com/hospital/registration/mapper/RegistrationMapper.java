@@ -63,6 +63,10 @@ public interface RegistrationMapper {
     @Select("SELECT MAX(queue_no) FROM registration WHERE schedule_id = #{scheduleId}")
     Integer selectMaxQueueNo(@Param("scheduleId") Integer scheduleId);
 
+    // 统计指定号源的已占用数量（非取消记录：BOOKED + FINISHED）
+    @Select("SELECT COUNT(*) FROM registration WHERE schedule_id = #{scheduleId} AND status != 'CANCELLED'")
+    int countOccupiedBySchedule(@Param("scheduleId") Integer scheduleId);
+
     @Select("<script>" +
             "SELECT r.*, p.patient_name, d.doctor_name, d.title, dept.dept_name " +
             "FROM registration r " +

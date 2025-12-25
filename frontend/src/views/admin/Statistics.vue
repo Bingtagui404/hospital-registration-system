@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { registrationApi, deptApi } from '../../api'
 import type { Registration, Department } from '../../types'
 
@@ -19,17 +20,19 @@ const stats = computed(() => {
   const booked = registrations.value.filter(r => r.status === 'BOOKED').length
   const cancelled = registrations.value.filter(r => r.status === 'CANCELLED').length
   const finished = registrations.value.filter(r => r.status === 'FINISHED').length
+  // 有效记录数（非取消），用于科室占比计算
+  const validTotal = booked + finished
   const totalFee = registrations.value
     .filter(r => r.status !== 'CANCELLED')
     .reduce((sum, r) => sum + (r.fee || 0), 0)
-  return { total, booked, cancelled, finished, totalFee }
+  return { total, booked, cancelled, finished, validTotal, totalFee }
 })
 
 // 按科室统计
 const deptStats = computed(() => {
   const map = new Map<string, number>()
   registrations.value.forEach(r => {
-    if (r.status !== 'CANCELLED') {
+    if (r.status !== 'CANCELLED' && r.deptName) {
       map.set(r.deptName, (map.get(r.deptName) || 0) + 1)
     }
   })
@@ -63,10 +66,34 @@ function getStatusType(status: string) {
 
 function getStatusText(status: string) {
   switch (status) {
-    case 'BOOKED': return '已预约'
+    case 'BOOKED': return '待就诊'
     case 'CANCELLED': return '已取消'
     case 'FINISHED': return '已完成'
     default: return status
+  }
+}
+
+async function handleFinish(row: Registration) {
+  try {
+    await ElMessageBox.confirm(
+      `确认将 ${row.patientName} 的挂号记录标记为已就诊吗？`,
+      '确认操作',
+      { confirmButtonText: '确认', cancelButtonText: '取消', type: 'info' }
+    )
+  } catch {
+    return
+  }
+  loading.value = true
+  try {
+    const res = await registrationApi.finish(row.regId)
+    if (res.code === 200) {
+      ElMessage.success('标记成功')
+      loadData()
+    } else {
+      ElMessage.error(res.message || '标记失败')
+    }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -88,7 +115,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="全部" clearable style="width: 120px">
-            <el-option label="已预约" value="BOOKED" />
+            <el-option label="待就诊" value="BOOKED" />
             <el-option label="已完成" value="FINISHED" />
             <el-option label="已取消" value="CANCELLED" />
           </el-select>
@@ -107,7 +134,7 @@ onMounted(() => {
       </el-card>
       <el-card class="stat-card stat-booked">
         <div class="stat-value">{{ stats.booked }}</div>
-        <div class="stat-label">已预约</div>
+        <div class="stat-label">待就诊</div>
       </el-card>
       <el-card class="stat-card stat-finished">
         <div class="stat-value">{{ stats.finished }}</div>
@@ -132,7 +159,7 @@ onMounted(() => {
           <div v-else class="dept-stats">
             <div v-for="item in deptStats" :key="item.name" class="dept-item">
               <span class="dept-name">{{ item.name }}</span>
-              <el-progress :percentage="Math.round(item.count / stats.total * 100)" :stroke-width="16" />
+              <el-progress :percentage="stats.validTotal > 0 ? Math.round(item.count / stats.validTotal * 100) : 0" :stroke-width="16" />
               <span class="dept-count">{{ item.count }}人</span>
             </div>
           </div>
@@ -162,6 +189,20 @@ onMounted(() => {
             </el-table-column>
             <el-table-column prop="fee" label="费用" width="80">
               <template #default="{ row }">¥{{ row.fee }}</template>
+            </el-table-column>
+            <el-table-column label="操作" width="100" fixed="right">
+              <template #default="{ row }">
+                <el-button
+                  v-if="row.status === 'BOOKED'"
+                  type="success"
+                  text
+                  size="small"
+                  @click="handleFinish(row)"
+                >
+                  标记已就诊
+                </el-button>
+                <span v-else class="no-action">-</span>
+              </template>
             </el-table-column>
           </el-table>
         </el-card>

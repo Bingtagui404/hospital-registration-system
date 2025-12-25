@@ -21,4 +21,6 @@ public interface ScheduleService {
     Result<Schedule> update(Schedule schedule);
 
     Result<Void> delete(Integer scheduleId);
+
+    Result<List<Schedule>> listByDoctorAndDateRange(Integer doctorId, LocalDate startDate, LocalDate endDate);
 }

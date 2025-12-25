@@ -20,4 +20,6 @@ public interface RegistrationService {
     Result<List<Registration>> listWithFilter(LocalDate startDate, LocalDate endDate, String status);
 
     Result<Map<String, Object>> statistics();
+
+    Result<Void> finish(Integer regId);
 }

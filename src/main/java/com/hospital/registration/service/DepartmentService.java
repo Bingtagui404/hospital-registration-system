@@ -16,4 +16,6 @@ public interface DepartmentService {
     Result<Department> update(Department department);
 
     Result<Void> delete(Integer deptId);
+
+    Result<List<Department>> search(String keyword);
 }

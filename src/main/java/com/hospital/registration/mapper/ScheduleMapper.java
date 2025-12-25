@@ -64,4 +64,29 @@ public interface ScheduleMapper {
 
     @Update("UPDATE schedule SET status = 0 WHERE schedule_id = #{scheduleId}")
     int deleteById(@Param("scheduleId") Integer scheduleId);
+
+    // 查找已删除的同医生+日期+时段排班（用于恢复）
+    @Select("SELECT * FROM schedule WHERE doctor_id = #{doctorId} AND work_date = #{workDate} " +
+            "AND time_slot = #{timeSlot} AND status = 0")
+    Schedule selectDeletedByDoctorDateSlot(@Param("doctorId") Integer doctorId,
+                                           @Param("workDate") LocalDate workDate,
+                                           @Param("timeSlot") String timeSlot);
+
+    // 恢复已删除的排班
+    @Update("UPDATE schedule SET status = 1, total_quota = #{totalQuota}, " +
+            "remaining_quota = #{remainingQuota}, fee = #{fee} WHERE schedule_id = #{scheduleId}")
+    int restoreById(@Param("scheduleId") Integer scheduleId, @Param("totalQuota") Integer totalQuota,
+                    @Param("remainingQuota") Integer remainingQuota, @Param("fee") java.math.BigDecimal fee);
+
+    // 查询医生指定日期范围的排班（用于周历视图）
+    @Select("SELECT s.*, d.doctor_name, d.title, d.dept_id, dept.dept_name " +
+            "FROM schedule s " +
+            "LEFT JOIN doctor d ON s.doctor_id = d.doctor_id " +
+            "LEFT JOIN department dept ON d.dept_id = dept.dept_id " +
+            "WHERE s.doctor_id = #{doctorId} " +
+            "AND s.work_date BETWEEN #{startDate} AND #{endDate} " +
+            "AND s.status = 1 ORDER BY s.work_date, s.time_slot")
+    List<Schedule> selectByDoctorAndDateRange(@Param("doctorId") Integer doctorId,
+                                               @Param("startDate") LocalDate startDate,
+                                               @Param("endDate") LocalDate endDate);
 }

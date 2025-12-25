@@ -18,4 +18,6 @@ public interface DoctorService {
     Result<Doctor> update(Doctor doctor);
 
     Result<Void> delete(Integer doctorId);
+
+    Result<List<Doctor>> search(String keyword);
 }

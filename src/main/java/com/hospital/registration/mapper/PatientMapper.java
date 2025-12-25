@@ -27,3 +27,7 @@ public interface PatientMapper {
             "age = #{age}, address = #{address}, medical_history = #{medicalHistory} WHERE patient_id = #{patientId}")
     int update(Patient patient);
 }
+//@select 查询数据
+//@insert 插入数据
+//@update 更新数据
+//@delete 删除数据

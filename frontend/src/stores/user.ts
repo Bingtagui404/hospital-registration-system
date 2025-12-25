@@ -28,13 +28,21 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function init() {
-    const savedPatient = localStorage.getItem('patient')
-    const savedAdmin = localStorage.getItem('admin')
-    if (savedPatient) {
-      patient.value = JSON.parse(savedPatient)
-    }
-    if (savedAdmin) {
-      admin.value = JSON.parse(savedAdmin)
+    try {
+      const savedPatient = localStorage.getItem('patient')
+      const savedAdmin = localStorage.getItem('admin')
+      if (savedPatient) {
+        patient.value = JSON.parse(savedPatient)
+      }
+      if (savedAdmin) {
+        admin.value = JSON.parse(savedAdmin)
+      }
+    } catch {
+      // 数据损坏，清理并重置
+      localStorage.removeItem('patient')
+      localStorage.removeItem('admin')
+      patient.value = null
+      admin.value = null
     }
   }
 

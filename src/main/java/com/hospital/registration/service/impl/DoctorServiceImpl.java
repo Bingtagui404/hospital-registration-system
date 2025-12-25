@@ -66,4 +66,13 @@ public class DoctorServiceImpl implements DoctorService {
         doctorMapper.deleteById(doctorId);
         return Result.success("删除成功", null);
     }
+
+    @Override
+    public Result<List<Doctor>> search(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return list();
+        }
+        List<Doctor> list = doctorMapper.searchByName(keyword.trim());
+        return Result.success(list);
+    }
 }

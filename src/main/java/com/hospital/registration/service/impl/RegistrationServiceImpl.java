@@ -175,6 +175,27 @@ public class RegistrationServiceImpl implements RegistrationService {
         return Result.success(stats);
     }
 
+    @Override
+    @Transactional
+    public Result<Void> finish(Integer regId) {
+        // 1. 查询挂号记录
+        Registration registration = registrationMapper.selectById(regId);
+        if (registration == null) {
+            return Result.error("挂号记录不存在");
+        }
+        if (!"BOOKED".equals(registration.getStatus())) {
+            return Result.error("只有待就诊状态的记录才能标记为已就诊");
+        }
+
+        // 2. 原子更新状态
+        int affected = registrationMapper.updateStatusWithCondition(regId, "BOOKED", "FINISHED");
+        if (affected == 0) {
+            return Result.error("标记失败，该记录可能已被修改");
+        }
+
+        return Result.success("标记成功", null);
+    }
+
     /**
      * 生成挂号单号：GH + yyyyMMdd + 6位序号
      * 使用 MAX+1 查询当天最大序号，配合重试机制处理并发冲突

@@ -37,7 +37,13 @@ async function handleSave() {
   }
   loading.value = true
   try {
-    const res = await patientApi.updateInfo(form.value as Patient)
+    // 处理年龄：无效值转为 null，避免后端反序列化错误
+    const ageValue = form.value.age
+    const submitData = {
+      ...form.value,
+      age: (ageValue === undefined || ageValue === null || (typeof ageValue === 'string' && ageValue === '')) ? null : ageValue
+    }
+    const res = await patientApi.updateInfo(submitData as Patient)
     userStore.setPatient(res.data)
     ElMessage.success('保存成功')
     editing.value = false
@@ -98,7 +104,14 @@ onMounted(() => {
           </el-col>
           <el-col :span="6">
             <el-form-item label="年龄">
-              <el-input-number v-model="form.age" :min="0" :max="150" style="width: 100%" />
+              <el-input
+                v-model.number="form.age"
+                type="number"
+                placeholder="请输入"
+                :min="0"
+                :max="150"
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
         </el-row>

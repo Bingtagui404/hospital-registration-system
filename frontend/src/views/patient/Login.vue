@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, Lock, Phone, Postcard } from '@element-plus/icons-vue'
 import { patientApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import type { Patient } from '../../types'

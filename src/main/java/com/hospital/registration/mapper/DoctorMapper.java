@@ -35,4 +35,12 @@ public interface DoctorMapper {
 
     @Update("UPDATE doctor SET status = 0 WHERE doctor_id = #{doctorId}")
     int deleteById(@Param("doctorId") Integer doctorId);
+
+    // 搜索医生（同时匹配医生姓名和科室名称）
+    @Select("SELECT d.*, dept.dept_name FROM doctor d " +
+            "LEFT JOIN department dept ON d.dept_id = dept.dept_id " +
+            "WHERE d.status = 1 AND (d.doctor_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR dept.dept_name LIKE CONCAT('%', #{keyword}, '%')) " +
+            "ORDER BY d.doctor_id")
+    List<Doctor> searchByName(@Param("keyword") String keyword);
 }
