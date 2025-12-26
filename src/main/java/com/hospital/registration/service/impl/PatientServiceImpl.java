@@ -29,11 +29,6 @@ public class PatientServiceImpl implements PatientService {
             return Result.error("该手机号已注册");
         }
 
-        // 设置默认密码
-        if (patient.getPassword() == null || patient.getPassword().isEmpty()) {
-            patient.setPassword("123456");
-        }
-
         patientMapper.insert(patient);
         patient.setPassword(null); // 不返回密码
         return Result.success("注册成功", patient);

@@ -1,6 +1,7 @@
 package com.hospital.registration.service;
 
 import com.hospital.registration.entity.Department;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 
 import java.util.List;
@@ -8,6 +9,8 @@ import java.util.List;
 public interface DepartmentService {
 
     Result<List<Department>> list();
+
+    Result<PageResult<Department>> listPage(int page, int pageSize);
 
     Result<Department> getById(Integer deptId);
 

@@ -38,4 +38,12 @@ public interface DepartmentMapper {
     // 搜索科室（按名称模糊匹配）
     @Select("SELECT * FROM department WHERE status = 1 AND dept_name LIKE CONCAT('%', #{keyword}, '%') ORDER BY dept_id")
     List<Department> searchByName(@Param("keyword") String keyword);
+
+    // 分页查询
+    @Select("SELECT * FROM department WHERE status = 1 ORDER BY dept_id LIMIT #{offset}, #{pageSize}")
+    List<Department> selectPage(@Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    // 统计总数
+    @Select("SELECT COUNT(*) FROM department WHERE status = 1")
+    long countAll();
 }

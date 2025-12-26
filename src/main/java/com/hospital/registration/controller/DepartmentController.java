@@ -2,7 +2,9 @@ package com.hospital.registration.controller;
 
 import com.hospital.registration.entity.Department;
 import com.hospital.registration.service.DepartmentService;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,18 +22,25 @@ public class DepartmentController {
         return departmentService.list();
     }
 
+    @GetMapping("/page")
+    public Result<PageResult<Department>> listPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return departmentService.listPage(page, pageSize);
+    }
+
     @GetMapping("/{id}")
     public Result<Department> getById(@PathVariable("id") Integer id) {
         return departmentService.getById(id);
     }
 
     @PostMapping
-    public Result<Department> add(@RequestBody Department department) {
+    public Result<Department> add(@Valid @RequestBody Department department) {
         return departmentService.add(department);
     }
 
     @PutMapping
-    public Result<Department> update(@RequestBody Department department) {
+    public Result<Department> update(@Valid @RequestBody Department department) {
         return departmentService.update(department);
     }
 

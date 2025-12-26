@@ -3,6 +3,7 @@ package com.hospital.registration.service.impl;
 import com.hospital.registration.entity.Department;
 import com.hospital.registration.mapper.DepartmentMapper;
 import com.hospital.registration.service.DepartmentService;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,23 @@ public class DepartmentServiceImpl implements DepartmentService {
     public Result<List<Department>> list() {
         List<Department> list = departmentMapper.selectAll();
         return Result.success(list);
+    }
+
+    @Override
+    public Result<PageResult<Department>> listPage(int page, int pageSize) {
+        // 分页参数边界校验
+        if (page < 1) {
+            page = 1;
+        }
+        if (pageSize < 1) {
+            pageSize = 10;
+        } else if (pageSize > 100) {
+            pageSize = 100;
+        }
+        int offset = (page - 1) * pageSize;
+        List<Department> list = departmentMapper.selectPage(offset, pageSize);
+        long total = departmentMapper.countAll();
+        return Result.success(PageResult.of(list, total, page, pageSize));
     }
 
     @Override

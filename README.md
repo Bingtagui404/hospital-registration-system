@@ -339,3 +339,34 @@ ORDER BY reg_time;
 | Profile.vue 年龄类型比较错误 | 修复 `age` 与空字符串比较的类型问题 |
 | 患者端/管理端状态文案不一致 | MyRecords.vue "已预约" → "待就诊" |
 | 恢复排班时 getTotalQuota() 可能 NPE | 添加 null 校验，返回友好错误提示 |
+
+### 2025-12-26 表单校验与代码审查
+
+#### 前端表单校验
+| 页面 | 修复内容 |
+|------|----------|
+| 科室管理 | 科室名称添加中文正则校验 `^[\u4e00-\u9fa5]+$` |
+| 排班管理 | 日期选择器限制为今天到未来7天（新增/编辑/搜索均生效）|
+| 挂号统计 | 表格列宽改为 `min-width` 自适应；结束日期不能早于开始日期 |
+| 个人信息 | 姓名中文校验+手机号11位校验+必填标记 |
+| 注册页面 | 姓名中文校验、身份证18位、手机号11位、密码6-20位；添加必填提示 |
+
+#### 后端验证分组
+| 修改 | 说明 |
+|------|------|
+| 新增 `ValidationGroups.java` | 定义 `OnCreate`、`OnUpdate` 验证分组 |
+| `Patient.java` | 所有字段添加 `groups` 属性；密码只在 `OnCreate` 时必填；姓名添加中文正则 |
+| `PatientController.java` | `register()` 使用 `@Validated(OnCreate.class)`；`updateInfo()` 使用 `@Validated(OnUpdate.class)` |
+
+#### Codex 代码审查修复
+| 问题级别 | 问题描述 | 解决方案 |
+|---------|---------|---------|
+| Medium | `updateInfo` 使用 `@Valid` 但 `password` 有 `@NotBlank` 导致更新失败 | 验证分组，密码只在注册时必填 |
+| Low | Schedule 搜索日期选择器无限制 | 添加 `:disabled-date` 限制 |
+| Low | 默认密码逻辑永不执行 | 删除 `PatientServiceImpl` 中的默认密码逻辑 |
+| Low | 分页参数未校验 | `DepartmentServiceImpl.listPage()` 添加边界校验 |
+
+#### 其他修复
+| 问题 | 解决方案 |
+|------|----------|
+| 注册密码校验触发时机 | 添加 `trigger: ['blur', 'change']` 即时校验 |

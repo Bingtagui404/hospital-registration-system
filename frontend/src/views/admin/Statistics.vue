@@ -73,6 +73,23 @@ function getStatusText(status: string) {
   }
 }
 
+// 结束日期不能早于开始日期
+function disabledEndDate(time: Date) {
+  if (!searchForm.value.startDate) return false
+  const start = new Date(searchForm.value.startDate)
+  start.setHours(0, 0, 0, 0)
+  return time < start
+}
+
+// 开始日期变更时，如果结束日期早于开始日期则清空结束日期
+function handleStartDateChange() {
+  if (searchForm.value.startDate && searchForm.value.endDate) {
+    if (new Date(searchForm.value.endDate) < new Date(searchForm.value.startDate)) {
+      searchForm.value.endDate = ''
+    }
+  }
+}
+
 async function handleFinish(row: Registration) {
   try {
     await ElMessageBox.confirm(
@@ -108,10 +125,24 @@ onMounted(() => {
     <el-card class="search-card">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="开始日期">
-          <el-date-picker v-model="searchForm.startDate" type="date" placeholder="开始日期" value-format="YYYY-MM-DD" clearable />
+          <el-date-picker
+            v-model="searchForm.startDate"
+            type="date"
+            placeholder="开始日期"
+            value-format="YYYY-MM-DD"
+            clearable
+            @change="handleStartDateChange"
+          />
         </el-form-item>
         <el-form-item label="结束日期">
-          <el-date-picker v-model="searchForm.endDate" type="date" placeholder="结束日期" value-format="YYYY-MM-DD" clearable />
+          <el-date-picker
+            v-model="searchForm.endDate"
+            type="date"
+            placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            clearable
+            :disabled-date="disabledEndDate"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="全部" clearable style="width: 120px">
@@ -151,46 +182,46 @@ onMounted(() => {
     </div>
 
     <!-- 科室统计 -->
-    <el-row :gutter="20">
-      <el-col :span="8">
+    <el-row :gutter="20" class="stats-section">
+      <el-col :span="6">
         <el-card>
           <template #header>按科室统计</template>
           <div v-if="deptStats.length === 0" class="empty-tip">暂无数据</div>
           <div v-else class="dept-stats">
             <div v-for="item in deptStats" :key="item.name" class="dept-item">
               <span class="dept-name">{{ item.name }}</span>
-              <el-progress :percentage="stats.validTotal > 0 ? Math.round(item.count / stats.validTotal * 100) : 0" :stroke-width="16" />
+              <el-progress :percentage="stats.validTotal > 0 ? Math.round(item.count / stats.validTotal * 100) : 0" :stroke-width="12" />
               <span class="dept-count">{{ item.count }}人</span>
             </div>
           </div>
         </el-card>
       </el-col>
 
-      <el-col :span="16">
+      <el-col :span="18">
         <el-card>
           <template #header>挂号记录列表</template>
-          <el-table :data="registrations" v-loading="loading" stripe border max-height="400">
-            <el-table-column prop="regNo" label="挂号单号" width="160" />
-            <el-table-column prop="patientName" label="患者" width="80" />
-            <el-table-column prop="deptName" label="科室" width="100" />
-            <el-table-column prop="doctorName" label="医生" width="80" />
-            <el-table-column prop="workDate" label="日期" width="110" />
-            <el-table-column label="时段" width="70">
+          <el-table :data="registrations" v-loading="loading" stripe border max-height="500">
+            <el-table-column prop="regNo" label="挂号单号" min-width="160" />
+            <el-table-column prop="patientName" label="患者" min-width="90" />
+            <el-table-column prop="deptName" label="科室" min-width="100" />
+            <el-table-column prop="doctorName" label="医生" min-width="90" />
+            <el-table-column prop="workDate" label="日期" min-width="110" />
+            <el-table-column label="时段" min-width="70">
               <template #default="{ row }">
                 {{ row.timeSlot === 'AM' ? '上午' : '下午' }}
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="80">
+            <el-table-column label="状态" min-width="85">
               <template #default="{ row }">
                 <el-tag :type="getStatusType(row.status)" size="small">
                   {{ getStatusText(row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="fee" label="费用" width="80">
+            <el-table-column prop="fee" label="费用" min-width="80">
               <template #default="{ row }">¥{{ row.fee }}</template>
             </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" min-width="100" fixed="right">
               <template #default="{ row }">
                 <el-button
                   v-if="row.status === 'BOOKED'"

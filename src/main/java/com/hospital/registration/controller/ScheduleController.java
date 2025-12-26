@@ -3,6 +3,7 @@ package com.hospital.registration.controller;
 import com.hospital.registration.entity.Schedule;
 import com.hospital.registration.service.ScheduleService;
 import com.hospital.registration.vo.Result;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -37,12 +38,12 @@ public class ScheduleController {
     }
 
     @PostMapping
-    public Result<Schedule> add(@RequestBody Schedule schedule) {
+    public Result<Schedule> add(@Valid @RequestBody Schedule schedule) {
         return scheduleService.add(schedule);
     }
 
     @PutMapping
-    public Result<Schedule> update(@RequestBody Schedule schedule) {
+    public Result<Schedule> update(@Valid @RequestBody Schedule schedule) {
         return scheduleService.update(schedule);
     }
 

@@ -5,6 +5,14 @@ export interface Result<T> {
   data: T
 }
 
+// 分页结果
+export interface PageResult<T> {
+  list: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 // 科室
 export interface Department {
   deptId: number

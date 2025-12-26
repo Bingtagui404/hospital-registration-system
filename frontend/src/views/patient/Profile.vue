@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { patientApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import type { Patient } from '../../types'
@@ -8,6 +9,7 @@ import type { Patient } from '../../types'
 const userStore = useUserStore()
 const loading = ref(false)
 const editing = ref(false)
+const formRef = ref<FormInstance>()
 
 const form = ref<Partial<Patient>>({
   patientName: '',
@@ -18,6 +20,24 @@ const form = ref<Partial<Patient>>({
   address: '',
   medicalHistory: ''
 })
+
+// 表单校验规则
+const rules: FormRules = {
+  patientName: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { pattern: /^[\u4e00-\u9fa5]+$/, message: '姓名只能包含中文', trigger: 'blur' },
+    { min: 2, max: 20, message: '姓名长度为2-20个字符', trigger: 'blur' }
+  ],
+  phone: [
+    { required: true, message: '手机号不能为空（用于登录）', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的11位手机号', trigger: 'blur' }
+  ]
+}
+
+// 手机号只允许输入数字
+function handlePhoneInput(value: string) {
+  form.value.phone = value.replace(/\D/g, '').slice(0, 11)
+}
 
 async function loadInfo() {
   if (!userStore.patient?.patientId) return
@@ -31,10 +51,10 @@ async function loadInfo() {
 }
 
 async function handleSave() {
-  if (!form.value.patientName) {
-    ElMessage.warning('请填写姓名')
-    return
-  }
+  if (!formRef.value) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
   loading.value = true
   try {
     // 处理年龄：无效值转为 null，避免后端反序列化错误
@@ -74,11 +94,11 @@ onMounted(() => {
         </div>
       </template>
 
-      <el-form :model="form" label-width="100px" :disabled="!editing">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" :disabled="!editing">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="姓名" required>
-              <el-input v-model="form.patientName" placeholder="请输入姓名" />
+            <el-form-item label="姓名" prop="patientName">
+              <el-input v-model="form.patientName" placeholder="请输入中文姓名" maxlength="20" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -90,8 +110,13 @@ onMounted(() => {
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="手机号">
-              <el-input v-model="form.phone" placeholder="请输入手机号" />
+            <el-form-item label="手机号" prop="phone">
+              <el-input
+                :model-value="form.phone"
+                @input="handlePhoneInput"
+                placeholder="请输入11位手机号（用于登录）"
+                maxlength="11"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="6">

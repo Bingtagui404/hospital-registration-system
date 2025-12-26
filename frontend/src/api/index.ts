@@ -1,9 +1,11 @@
 import request from './request'
-import type { Result, Department, Doctor, Schedule, Registration, Patient, Admin, Statistics } from '../types'
+import type { Result, PageResult, Department, Doctor, Schedule, Registration, Patient, Admin, Statistics } from '../types'
 
 // 科室 API
 export const deptApi = {
   list: () => request.get<unknown, Result<Department[]>>('/dept/list'),
+  listPage: (page: number, pageSize: number) =>
+    request.get<unknown, Result<PageResult<Department>>>('/dept/page', { params: { page, pageSize } }),
   getById: (id: number) => request.get<unknown, Result<Department>>(`/dept/${id}`),
   create: (data: Partial<Department>) => request.post<unknown, Result<Department>>('/dept', data),
   update: (data: Partial<Department>) => request.put<unknown, Result<Department>>('/dept', data),
