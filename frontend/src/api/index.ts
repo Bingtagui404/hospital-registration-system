@@ -25,6 +25,8 @@ export const doctorApi = {
 export const scheduleApi = {
   list: (deptId?: number, workDate?: string) =>
     request.get<unknown, Result<Schedule[]>>('/schedule/list', { params: { deptId, workDate } }),
+  listPage: (deptId?: number, workDate?: string, page?: number, pageSize?: number) =>
+    request.get<unknown, Result<PageResult<Schedule>>>('/schedule/page', { params: { deptId, workDate, page, pageSize } }),
   available: (deptId: number, workDate: string) =>
     request.get<unknown, Result<Schedule[]>>('/schedule/available', { params: { deptId, workDate } }),
   getById: (id: number) => request.get<unknown, Result<Schedule>>(`/schedule/${id}`),
@@ -45,6 +47,8 @@ export const registrationApi = {
     request.get<unknown, Result<Registration[]>>('/registration/my', { params: { patientId } }),
   list: (startDate?: string, endDate?: string, status?: string) =>
     request.get<unknown, Result<Registration[]>>('/registration/list', { params: { startDate, endDate, status } }),
+  listPage: (startDate?: string, endDate?: string, status?: string, page?: number, pageSize?: number) =>
+    request.get<unknown, Result<PageResult<Registration>>>('/registration/page', { params: { startDate, endDate, status, page, pageSize } }),
   getById: (id: number) => request.get<unknown, Result<Registration>>(`/registration/${id}`),
   statistics: () => request.get<unknown, Result<Statistics>>('/registration/statistics')
 }

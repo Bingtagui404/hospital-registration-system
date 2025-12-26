@@ -357,7 +357,7 @@ ORDER BY reg_time;
 | 新增 `ValidationGroups.java` | 定义 `OnCreate`、`OnUpdate` 验证分组 |
 | `Patient.java` | 所有字段添加 `groups` 属性；密码只在 `OnCreate` 时必填；姓名添加中文正则 |
 | `PatientController.java` | `register()` 使用 `@Validated(OnCreate.class)`；`updateInfo()` 使用 `@Validated(OnUpdate.class)` |
-
+                                  
 #### Codex 代码审查修复
 | 问题级别 | 问题描述 | 解决方案 |
 |---------|---------|---------|
@@ -370,3 +370,42 @@ ORDER BY reg_time;
 | 问题 | 解决方案 |
 |------|----------|
 | 注册密码校验触发时机 | 添加 `trigger: ['blur', 'change']` 即时校验 |
+
+### 2025-12-26 分页功能 + 统计优化
+
+#### 分页功能扩展
+| 页面 | 修改内容 |
+|------|----------|
+| 科室管理 | 已有分页功能 |
+| 排班管理 | 新增分页功能（后端 `GET /api/schedule/page`，前端 `el-pagination`）|
+| 挂号统计 | 新增分页功能（后端 `GET /api/registration/page`，前端 `el-pagination`）|
+
+#### 排班日期限制修复
+| 问题 | 解决方案 |
+|------|----------|
+| 新增/编辑排班日期限制"今天到未来7天"过于严格 | 改为只限制不能选过去日期 |
+| 搜索日期选择器也被限制 | 移除搜索表单的日期限制 |
+
+#### 统计页优化（Codex 审查修复）
+| 问题级别 | 问题描述 | 解决方案 |
+|---------|---------|---------|
+| Medium | 按科室统计分子是当前页数据，分母是全量，比例不一致 | 后端新增 `countByDept()` 按科室分组统计，前端改用全量数据 |
+| Low | 顶部统计卡片始终全量（符合预期） | 无需修改，全量统计作为总览 |
+
+#### 修改文件清单
+
+**后端：**
+- `ScheduleMapper.java` - 新增 `selectPageWithFilter`、`countWithFilter`
+- `ScheduleService.java` - 新增 `listPageWithFilter`
+- `ScheduleServiceImpl.java` - 实现分页逻辑
+- `ScheduleController.java` - 新增 `GET /api/schedule/page`
+- `RegistrationMapper.java` - 新增 `selectPageWithFilter`、`countWithFilter`、`countByDept`
+- `RegistrationService.java` - 新增 `listPageWithFilter`
+- `RegistrationServiceImpl.java` - 实现分页逻辑，`statistics()` 返回 `deptStats`
+- `RegistrationController.java` - 新增 `GET /api/registration/page`
+
+**前端：**
+- `api/index.ts` - 新增 `scheduleApi.listPage`、`registrationApi.listPage`
+- `types/index.ts` - 新增 `DeptStatItem` 类型，`Statistics` 增加 `deptStats`
+- `Schedule.vue` - 添加分页组件，日期限制改为只禁止过去日期
+- `Statistics.vue` - 添加分页组件，按科室统计改用后端全量数据

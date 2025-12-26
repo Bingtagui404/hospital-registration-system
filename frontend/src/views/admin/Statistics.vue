@@ -1,12 +1,39 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { registrationApi, deptApi } from '../../api'
-import type { Registration, Department } from '../../types'
+import type { Registration, Department, Statistics } from '../../types'
 
 const loading = ref(false)
 const registrations = ref<Registration[]>([])
 const departments = ref<Department[]>([])
+
+// 分页状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+// 统计数据（来自后端API）
+const statsData = ref<Statistics>({
+  bookedCount: 0,
+  cancelledCount: 0,
+  finishedCount: 0,
+  totalFee: 0,
+  deptStats: []
+})
+
+// 计算属性：格式化统计数据供模板使用
+const stats = computed(() => ({
+  total: statsData.value.bookedCount + statsData.value.cancelledCount + statsData.value.finishedCount,
+  booked: statsData.value.bookedCount,
+  finished: statsData.value.finishedCount,
+  cancelled: statsData.value.cancelledCount,
+  totalFee: statsData.value.totalFee,
+  validTotal: statsData.value.bookedCount + statsData.value.finishedCount
+}))
+
+// 按科室统计（来自后端全量数据）
+const deptStats = computed(() => statsData.value.deptStats)
 
 const searchForm = ref({
   startDate: '',
@@ -14,45 +41,47 @@ const searchForm = ref({
   status: ''
 })
 
-// 统计数据
-const stats = computed(() => {
-  const total = registrations.value.length
-  const booked = registrations.value.filter(r => r.status === 'BOOKED').length
-  const cancelled = registrations.value.filter(r => r.status === 'CANCELLED').length
-  const finished = registrations.value.filter(r => r.status === 'FINISHED').length
-  // 有效记录数（非取消），用于科室占比计算
-  const validTotal = booked + finished
-  const totalFee = registrations.value
-    .filter(r => r.status !== 'CANCELLED')
-    .reduce((sum, r) => sum + (r.fee || 0), 0)
-  return { total, booked, cancelled, finished, validTotal, totalFee }
-})
-
-// 按科室统计
-const deptStats = computed(() => {
-  const map = new Map<string, number>()
-  registrations.value.forEach(r => {
-    if (r.status !== 'CANCELLED' && r.deptName) {
-      map.set(r.deptName, (map.get(r.deptName) || 0) + 1)
-    }
-  })
-  return Array.from(map.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-})
+async function loadStats() {
+  const res = await registrationApi.statistics()
+  statsData.value = res.data
+}
 
 async function loadData() {
   loading.value = true
   try {
     const [regRes, deptRes] = await Promise.all([
-      registrationApi.list(searchForm.value.startDate, searchForm.value.endDate, searchForm.value.status),
+      registrationApi.listPage(
+        searchForm.value.startDate,
+        searchForm.value.endDate,
+        searchForm.value.status,
+        currentPage.value,
+        pageSize.value
+      ),
       deptApi.list()
     ])
-    registrations.value = regRes.data
+    registrations.value = regRes.data.list
+    total.value = regRes.data.total
     departments.value = deptRes.data
   } finally {
     loading.value = false
   }
+}
+
+function handleSearch() {
+  currentPage.value = 1
+  loadData()
+  loadStats()
+}
+
+function handlePageChange(page: number) {
+  currentPage.value = page
+  loadData()
+}
+
+function handleSizeChange(size: number) {
+  pageSize.value = size
+  currentPage.value = 1
+  loadData()
 }
 
 function getStatusType(status: string) {
@@ -116,6 +145,7 @@ async function handleFinish(row: Registration) {
 
 onMounted(() => {
   loadData()
+  loadStats()
 })
 </script>
 
@@ -152,7 +182,7 @@ onMounted(() => {
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -236,6 +266,17 @@ onMounted(() => {
               </template>
             </el-table-column>
           </el-table>
+          <div class="pagination-wrapper">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @current-change="handlePageChange"
+              @size-change="handleSizeChange"
+            />
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -310,5 +351,15 @@ onMounted(() => {
   text-align: center;
   color: #909399;
   padding: 20px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.no-action {
+  color: #c0c4cc;
 }
 </style>

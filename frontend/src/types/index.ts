@@ -93,10 +93,17 @@ export interface Admin {
   status: number
 }
 
+// 科室统计项
+export interface DeptStatItem {
+  name: string
+  count: number
+}
+
 // 统计数据
 export interface Statistics {
   bookedCount: number
   cancelledCount: number
   finishedCount: number
   totalFee: number
+  deptStats: DeptStatItem[]
 }

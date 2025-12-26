@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface RegistrationMapper {
@@ -82,4 +83,45 @@ public interface RegistrationMapper {
     List<Registration> selectWithFilter(@Param("startDate") LocalDate startDate,
                                         @Param("endDate") LocalDate endDate,
                                         @Param("status") String status);
+
+    // 分页查询挂号记录
+    @Select("<script>" +
+            "SELECT r.*, p.patient_name, d.doctor_name, d.title, dept.dept_name " +
+            "FROM registration r " +
+            "LEFT JOIN patient p ON r.patient_id = p.patient_id " +
+            "LEFT JOIN doctor d ON r.doctor_id = d.doctor_id " +
+            "LEFT JOIN department dept ON r.dept_id = dept.dept_id " +
+            "WHERE 1=1 " +
+            "<if test='startDate != null'> AND r.work_date &gt;= #{startDate} </if>" +
+            "<if test='endDate != null'> AND r.work_date &lt;= #{endDate} </if>" +
+            "<if test='status != null and status != \"\"'> AND r.status = #{status} </if>" +
+            "ORDER BY r.reg_time DESC " +
+            "LIMIT #{offset}, #{pageSize}" +
+            "</script>")
+    List<Registration> selectPageWithFilter(@Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate,
+                                            @Param("status") String status,
+                                            @Param("offset") int offset,
+                                            @Param("pageSize") int pageSize);
+
+    // 统计挂号记录总数
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM registration r " +
+            "WHERE 1=1 " +
+            "<if test='startDate != null'> AND r.work_date &gt;= #{startDate} </if>" +
+            "<if test='endDate != null'> AND r.work_date &lt;= #{endDate} </if>" +
+            "<if test='status != null and status != \"\"'> AND r.status = #{status} </if>" +
+            "</script>")
+    long countWithFilter(@Param("startDate") LocalDate startDate,
+                         @Param("endDate") LocalDate endDate,
+                         @Param("status") String status);
+
+    // 按科室统计挂号数量（全量，排除已取消）
+    @Select("SELECT dept.dept_name AS name, COUNT(*) AS count " +
+            "FROM registration r " +
+            "LEFT JOIN department dept ON r.dept_id = dept.dept_id " +
+            "WHERE r.status != 'CANCELLED' " +
+            "GROUP BY r.dept_id, dept.dept_name " +
+            "ORDER BY count DESC")
+    List<Map<String, Object>> countByDept();
 }

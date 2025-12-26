@@ -4,6 +4,7 @@ import com.hospital.registration.entity.Schedule;
 import com.hospital.registration.mapper.RegistrationMapper;
 import com.hospital.registration.mapper.ScheduleMapper;
 import com.hospital.registration.service.ScheduleService;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,19 @@ public class ScheduleServiceImpl implements ScheduleService {
     public Result<List<Schedule>> listWithFilter(Integer deptId, LocalDate workDate) {
         List<Schedule> list = scheduleMapper.selectWithFilter(deptId, workDate);
         return Result.success(list);
+    }
+
+    @Override
+    public Result<PageResult<Schedule>> listPageWithFilter(Integer deptId, LocalDate workDate, int page, int pageSize) {
+        // 分页参数边界校验
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        else if (pageSize > 100) pageSize = 100;
+
+        int offset = (page - 1) * pageSize;
+        List<Schedule> list = scheduleMapper.selectPageWithFilter(deptId, workDate, offset, pageSize);
+        long total = scheduleMapper.countWithFilter(deptId, workDate);
+        return Result.success(PageResult.of(list, total, page, pageSize));
     }
 
     @Override

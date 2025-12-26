@@ -1,6 +1,7 @@
 package com.hospital.registration.service;
 
 import com.hospital.registration.entity.Schedule;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 
 import java.time.LocalDate;
@@ -11,6 +12,8 @@ public interface ScheduleService {
     Result<List<Schedule>> list();
 
     Result<List<Schedule>> listWithFilter(Integer deptId, LocalDate workDate);
+
+    Result<PageResult<Schedule>> listPageWithFilter(Integer deptId, LocalDate workDate, int page, int pageSize);
 
     Result<List<Schedule>> listAvailable(Integer deptId, LocalDate workDate);
 

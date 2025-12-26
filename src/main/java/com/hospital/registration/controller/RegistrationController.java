@@ -2,6 +2,7 @@ package com.hospital.registration.controller;
 
 import com.hospital.registration.entity.Registration;
 import com.hospital.registration.service.RegistrationService;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -55,6 +56,16 @@ public class RegistrationController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             @RequestParam(required = false) String status) {
         return registrationService.listWithFilter(startDate, endDate, status);
+    }
+
+    @GetMapping("/page")
+    public Result<PageResult<Registration>> listPage(
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return registrationService.listPageWithFilter(startDate, endDate, status, page, pageSize);
     }
 
     @GetMapping("/statistics")

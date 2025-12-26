@@ -18,6 +18,11 @@ const searchForm = ref({
   workDate: ''
 })
 
+// 分页状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
 const form = ref<Partial<Schedule>>({
   doctorId: undefined,
   workDate: '',
@@ -39,13 +44,11 @@ const rules: FormRules = {
   fee: [{ required: true, message: '请输入挂号费', trigger: 'blur' }]
 }
 
-// 排班日期限制：只能选择今天到未来7天
+// 排班日期限制：不能选择过去日期
 function disabledDate(time: Date) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const maxDate = new Date(today)
-  maxDate.setDate(maxDate.getDate() + 7)
-  return time < today || time > maxDate
+  return time < today
 }
 
 async function loadDepartments() {
@@ -65,11 +68,33 @@ async function loadDoctors(deptId?: number) {
 async function loadSchedules() {
   loading.value = true
   try {
-    const res = await scheduleApi.list(searchForm.value.deptId, searchForm.value.workDate)
-    schedules.value = res.data
+    const res = await scheduleApi.listPage(
+      searchForm.value.deptId,
+      searchForm.value.workDate,
+      currentPage.value,
+      pageSize.value
+    )
+    schedules.value = res.data.list
+    total.value = res.data.total
   } finally {
     loading.value = false
   }
+}
+
+function handleSearch() {
+  currentPage.value = 1
+  loadSchedules()
+}
+
+function handlePageChange(page: number) {
+  currentPage.value = page
+  loadSchedules()
+}
+
+function handleSizeChange(size: number) {
+  pageSize.value = size
+  currentPage.value = 1
+  loadSchedules()
 }
 
 function showAddDialog() {
@@ -130,6 +155,10 @@ async function handleDelete(row: Schedule) {
   try {
     await scheduleApi.delete(row.scheduleId)
     ElMessage.success('删除成功')
+    // 如果当前页只有一条数据且不是第一页，则跳转到上一页
+    if (schedules.value.length === 1 && currentPage.value > 1) {
+      currentPage.value--
+    }
     loadSchedules()
   } finally {
     loading.value = false
@@ -157,10 +186,10 @@ onMounted(async () => {
           </el-select>
         </el-form-item>
         <el-form-item label="日期">
-          <el-date-picker v-model="searchForm.workDate" type="date" placeholder="选择日期（今天起7天内）" value-format="YYYY-MM-DD" clearable :disabled-date="disabledDate" />
+          <el-date-picker v-model="searchForm.workDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" clearable />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="loadSchedules">查询</el-button>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="showAddDialog">新增排班</el-button>
         </el-form-item>
       </el-form>
@@ -198,6 +227,19 @@ onMounted(async () => {
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500">
@@ -213,7 +255,7 @@ onMounted(async () => {
           </el-select>
         </el-form-item>
         <el-form-item label="日期" prop="workDate">
-          <el-date-picker v-model="form.workDate" type="date" placeholder="选择日期（今天起7天内）" value-format="YYYY-MM-DD" :disabled-date="disabledDate" style="width: 100%" />
+          <el-date-picker v-model="form.workDate" type="date" placeholder="选择日期（不能选过去日期）" value-format="YYYY-MM-DD" :disabled-date="disabledDate" style="width: 100%" />
         </el-form-item>
         <el-form-item label="时段" prop="timeSlot">
           <el-radio-group v-model="form.timeSlot">
@@ -246,5 +288,11 @@ onMounted(async () => {
 
 .search-card {
   margin-bottom: 20px;
+}
+
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

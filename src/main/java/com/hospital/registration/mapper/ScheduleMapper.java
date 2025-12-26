@@ -89,4 +89,31 @@ public interface ScheduleMapper {
     List<Schedule> selectByDoctorAndDateRange(@Param("doctorId") Integer doctorId,
                                                @Param("startDate") LocalDate startDate,
                                                @Param("endDate") LocalDate endDate);
+
+    // 分页查询排班
+    @Select("<script>" +
+            "SELECT s.*, d.doctor_name, d.title, d.dept_id, dept.dept_name " +
+            "FROM schedule s " +
+            "LEFT JOIN doctor d ON s.doctor_id = d.doctor_id " +
+            "LEFT JOIN department dept ON d.dept_id = dept.dept_id " +
+            "WHERE s.status = 1 " +
+            "<if test='deptId != null'> AND d.dept_id = #{deptId} </if>" +
+            "<if test='workDate != null'> AND s.work_date = #{workDate} </if>" +
+            "ORDER BY s.work_date DESC, s.time_slot " +
+            "LIMIT #{offset}, #{pageSize}" +
+            "</script>")
+    List<Schedule> selectPageWithFilter(@Param("deptId") Integer deptId,
+                                        @Param("workDate") LocalDate workDate,
+                                        @Param("offset") int offset,
+                                        @Param("pageSize") int pageSize);
+
+    // 统计排班总数
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM schedule s " +
+            "LEFT JOIN doctor d ON s.doctor_id = d.doctor_id " +
+            "WHERE s.status = 1 " +
+            "<if test='deptId != null'> AND d.dept_id = #{deptId} </if>" +
+            "<if test='workDate != null'> AND s.work_date = #{workDate} </if>" +
+            "</script>")
+    long countWithFilter(@Param("deptId") Integer deptId, @Param("workDate") LocalDate workDate);
 }

@@ -5,6 +5,7 @@ import com.hospital.registration.entity.Schedule;
 import com.hospital.registration.mapper.RegistrationMapper;
 import com.hospital.registration.mapper.ScheduleMapper;
 import com.hospital.registration.service.RegistrationService;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -166,12 +167,26 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
+    public Result<PageResult<Registration>> listPageWithFilter(LocalDate startDate, LocalDate endDate, String status, int page, int pageSize) {
+        // 分页参数边界校验
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        else if (pageSize > 100) pageSize = 100;
+
+        int offset = (page - 1) * pageSize;
+        List<Registration> list = registrationMapper.selectPageWithFilter(startDate, endDate, status, offset, pageSize);
+        long total = registrationMapper.countWithFilter(startDate, endDate, status);
+        return Result.success(PageResult.of(list, total, page, pageSize));
+    }
+
+    @Override
     public Result<Map<String, Object>> statistics() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("bookedCount", registrationMapper.countBooked());
         stats.put("cancelledCount", registrationMapper.countCancelled());
         stats.put("finishedCount", registrationMapper.countFinished());
         stats.put("totalFee", registrationMapper.sumFee());
+        stats.put("deptStats", registrationMapper.countByDept());
         return Result.success(stats);
     }
 

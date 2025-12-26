@@ -2,6 +2,7 @@ package com.hospital.registration.controller;
 
 import com.hospital.registration.entity.Schedule;
 import com.hospital.registration.service.ScheduleService;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,15 @@ public class ScheduleController {
             @RequestParam(required = false) Integer deptId,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate workDate) {
         return scheduleService.listWithFilter(deptId, workDate);
+    }
+
+    @GetMapping("/page")
+    public Result<PageResult<Schedule>> listPage(
+            @RequestParam(required = false) Integer deptId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate workDate,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return scheduleService.listPageWithFilter(deptId, workDate, page, pageSize);
     }
 
     @GetMapping("/available")

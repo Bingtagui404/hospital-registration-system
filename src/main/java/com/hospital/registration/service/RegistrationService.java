@@ -1,6 +1,7 @@
 package com.hospital.registration.service;
 
 import com.hospital.registration.entity.Registration;
+import com.hospital.registration.vo.PageResult;
 import com.hospital.registration.vo.Result;
 
 import java.time.LocalDate;
@@ -18,6 +19,8 @@ public interface RegistrationService {
     Result<Registration> getById(Integer regId);
 
     Result<List<Registration>> listWithFilter(LocalDate startDate, LocalDate endDate, String status);
+
+    Result<PageResult<Registration>> listPageWithFilter(LocalDate startDate, LocalDate endDate, String status, int page, int pageSize);
 
     Result<Map<String, Object>> statistics();
 
